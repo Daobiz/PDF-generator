@@ -1,0 +1,43 @@
+[
+  {
+    "invoice_id": "INV-2001",
+    "date": "2026-08-03",
+    "customer_name": "Алексей Козлов",
+    "customer_email": "akozlov@example.com",
+    "customer_address": "Екатеринбург, ул. Ленина, 8",
+    "currency": "RUB",
+    "tax_rate": 0.2,
+    "notes": "Доставка включена",
+    "items": [
+      {"item_name": "Монитор 27\"", "quantity": 2, "unit_price": 24990},
+      {"item_name": "Кабель HDMI", "quantity": 2, "unit_price": 650}
+    ]
+  },
+  {
+    "invoice_id": "INV-2002",
+    "date": "2026-09-15",
+    "customer_name": "АО «Восток»",
+    "customer_email": "docs@vostok.ru",
+    "customer_address": "Новосибирск, Красный пр., 1",
+    "currency": "RUB",
+    "tax_rate": 0.2,
+    "notes": "НДС включён",
+    "items": [
+      {"item_name": "Разработка сайта", "quantity": 1, "unit_price": 180000},
+      {"item_name": "Хостинг (год)", "quantity": 1, "unit_price": 12000}
+    ]
+  },
+  {
+    "invoice_id": "INV-2003",
+    "date": "2026-10-02",
+    "customer_name": "Ольга Новикова",
+    "customer_email": "olga@example.com",
+    "customer_address": "Сочи, ул. Навагинская, 3",
+    "currency": "RUB",
+    "tax_rate": 0.2,
+    "notes": "Спасибо за заказ",
+    "items": [
+      {"item_name": "Онлайн-курс Python", "quantity": 1, "unit_price": 15900}
+    ]
+  }
+]

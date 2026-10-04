@@ -1,0 +1,70 @@
+[
+  {
+    "invoice_id": "INV-3001",
+    "date": "2026-11-07",
+    "customer_name": "Иван Петров",
+    "customer_email": "ivan.petrov@example.com",
+    "customer_address": "Москва, ул. Тверская, 15",
+    "currency": "RUB",
+    "tax_rate": 0.2,
+    "notes": "Оплата до 15.11.2026",
+    "items": [
+      {
+        "item_name": "Ноутбук 14'", "quantity": 1, "unit_price": 78990},{
+          "item_name": "Мышь беспроводная",
+          "quantity": 1,
+          "unit_price": 2490
+        },
+        {
+          "item_name": "Сумка для ноутбука",
+          "quantity": 1,
+          "unit_price": 3990
+        }
+      ]
+    },
+    {
+      "invoice_id": "INV-3002",
+      "date": "2026-12-01",
+      "customer_name": "ООО «Северный свет»",
+      "customer_email": "buh@severny-svet.ru",
+      "customer_address": "Санкт-Петербург, Лиговский пр., 42",
+      "currency": "RUB",
+      "tax_rate": 0.2,
+      "notes": "НДС включён в стоимость",
+      "items": [
+        {
+          "item_name": "Настройка CRM",
+          "quantity": 1,
+          "unit_price": 95000
+        },
+        {
+          "item_name": "Обучение сотрудников",
+          "quantity": 3,
+          "unit_price": 15000
+        }
+      ]
+    },
+    {
+      "invoice_id": "INV-3003",
+      "date": "2027-01-20",
+      "customer_name": "Мария Соколова",
+      "customer_email": "m.sokolova@example.com",
+      "customer_address": "Казань, ул. Баумана, 7",
+      "currency": "RUB",
+      "tax_rate": 0.2,
+      "notes": "Спасибо за покупку",
+      "items": [
+        {
+          "item_name": "Планшет 11'", "quantity": 1, "unit_price": 45990},{
+            "item_name": "Чехол-клавиатура",
+            "quantity": 1,
+            "unit_price": 6990
+          },
+          {
+            "item_name": "Защитное стекло",
+            "quantity": 1,
+            "unit_price": 1290
+          }
+        ]
+      }
+    ]

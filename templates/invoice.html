@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Счёт {{ invoice_id }}</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Roboto", "DejaVu Sans", sans-serif;
+      color: #1f2933;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid #1d4ed8;
+      padding-bottom: 12px;
+      margin-bottom: 22px;
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 26px;
+      color: #1d4ed8;
+    }
+    .meta { text-align: right; color: #52606d; }
+    .meta strong { color: #1f2933; font-size: 14px; }
+    .grid {
+      width: 100%;
+      margin-bottom: 22px;
+    }
+    .card {
+      background: #f5f7fa;
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .label {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 10px;
+      color: #7b8794;
+      margin-bottom: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 16px 0;
+    }
+    th {
+      text-align: left;
+      background: #1d4ed8;
+      color: #fff;
+      padding: 8px 10px;
+      font-weight: 500;
+    }
+    td { padding: 8px 10px; border-bottom: 1px solid #e4e7eb; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .num { text-align: right; white-space: nowrap; }
+    .totals {
+      width: 280px;
+      margin-left: auto;
+    }
+    .totals td { border: none; padding: 4px 8px; }
+    .totals .grand {
+      font-size: 15px;
+      font-weight: 700;
+      border-top: 2px solid #1d4ed8;
+    }
+    .notes {
+      margin-top: 28px;
+      color: #52606d;
+      font-size: 11px;
+    }
+    .footer {
+      margin-top: 36px;
+      font-size: 10px;
+      color: #9aa5b1;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Счёт на оплату</h1>
+      <div>Документ сформирован автоматически</div>
+    </div>
+    <div class="meta">
+      <div>Номер: <strong>{{ invoice_id }}</strong></div>
+      <div>Дата: <strong>{{ date }}</strong></div>
+    </div>
+  </div>
+
+  <table class="grid">
+    <tr>
+      <td style="width:50%; vertical-align:top; padding-right:10px; border:none;">
+        <div class="card">
+          <div class="label">Покупатель</div>
+          <div><strong>{{ customer_name }}</strong></div>
+          <div>{{ customer_email }}</div>
+          <div>{{ customer_address }}</div>
+        </div>
+      </td>
+      <td style="width:50%; vertical-align:top; padding-left:10px; border:none;">
+        <div class="card">
+          <div class="label">Примечание</div>
+          <div>{{ notes or "—" }}</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Наименование</th>
+        <th class="num">Кол-во</th>
+        <th class="num">Цена</th>
+        <th class="num">Сумма</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.item_name }}</td>
+        <td class="num">{{ item.quantity }}</td>
+        <td class="num">{{ item.unit_price | money }} {{ currency }}</td>
+        <td class="num">{{ item.line_total | money }} {{ currency }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totals">
+    <tr>
+      <td>Подытог</td>
+      <td class="num">{{ subtotal | money }} {{ currency }}</td>
+    </tr>
+    <tr>
+      <td>НДС</td>
+      <td class="num">{{ tax | money }} {{ currency }}</td>
+    </tr>
+    <tr class="grand">
+      <td>Итого</td>
+      <td class="num">{{ total | money }} {{ currency }}</td>
+    </tr>
+  </table>
+
+  <div class="notes">Счёт действителен к оплате. Спасибо за сотрудничество.</div>
+  <div class="footer">{{ invoice_id }} · {{ customer_name }}</div>
+</body>
+</html>
