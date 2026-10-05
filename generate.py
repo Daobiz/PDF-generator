@@ -9,6 +9,7 @@ import os
 import platform
 import subprocess
 import sys
+from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any
@@ -42,11 +43,118 @@ def configure_stdio() -> None:
             pass
 
 
+MONTHS_GENITIVE = (
+    "",
+    "января",
+    "февраля",
+    "марта",
+    "апреля",
+    "мая",
+    "июня",
+    "июля",
+    "августа",
+    "сентября",
+    "октября",
+    "ноября",
+    "декабря",
+)
+
+ONES_MASC = ("", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять")
+ONES_FEM = ("", "одна", "две", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять")
+TEENS = (
+    "десять",
+    "одиннадцать",
+    "двенадцать",
+    "тринадцать",
+    "четырнадцать",
+    "пятнадцать",
+    "шестнадцать",
+    "семнадцать",
+    "восемнадцать",
+    "девятнадцать",
+)
+TENS = ("", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто")
+HUNDREDS = ("", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот")
+
+
 def money(value: Any) -> str:
     amount = to_decimal(value)
     quantized = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     formatted = f"{quantized:,.2f}".replace(",", " ")
     return formatted
+
+
+def format_qty(value: Any) -> str:
+    amount = to_decimal(value)
+    if amount == amount.to_integral_value():
+        return str(int(amount))
+    return format(amount.normalize(), "f").replace(".", ",")
+
+
+def _plural(n: int, one: str, few: str, many: str) -> str:
+    n = abs(n) % 100
+    if 11 <= n <= 14:
+        return many
+    n = n % 10
+    if n == 1:
+        return one
+    if 2 <= n <= 4:
+        return few
+    return many
+
+
+def _triplet(n: int, feminine: bool = False) -> str:
+    ones = ONES_FEM if feminine else ONES_MASC
+    hundreds, rem = divmod(n, 100)
+    parts: list[str] = []
+    if hundreds:
+        parts.append(HUNDREDS[hundreds])
+    if 10 <= rem <= 19:
+        parts.append(TEENS[rem - 10])
+    else:
+        tens, unit = divmod(rem, 10)
+        if tens:
+            parts.append(TENS[tens])
+        if unit:
+            parts.append(ones[unit])
+    return " ".join(parts)
+
+
+def amount_in_words(value: Any) -> str:
+    amount = to_decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    rubles = int(amount)
+    kopecks = int((amount - Decimal(rubles)) * 100)
+    if rubles == 0:
+        words = "ноль"
+    else:
+        groups = (
+            (rubles // 1_000_000, False, "миллион", "миллиона", "миллионов"),
+            ((rubles // 1_000) % 1_000, True, "тысяча", "тысячи", "тысяч"),
+            (rubles % 1_000, False, "", "", ""),
+        )
+        chunks: list[str] = []
+        for number, feminine, one, few, many in groups:
+            if not number:
+                continue
+            chunk = _triplet(number, feminine)
+            if one:
+                chunk = f"{chunk} {_plural(number, one, few, many)}"
+            chunks.append(chunk)
+        words = " ".join(chunks)
+    ruble_word = _plural(rubles, "рубль", "рубля", "рублей")
+    kopeck_word = _plural(kopecks, "копейка", "копейки", "копеек")
+    return f"{words} {ruble_word} {kopecks:02d} {kopeck_word}".capitalize()
+
+
+def parse_act_date(value: Any) -> tuple[str, str, str, str]:
+    text = str(value or "").strip()
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y", "%d-%m-%Y"):
+        try:
+            dt = datetime.strptime(text[:10], fmt)
+            return f"{dt.day:02d}", MONTHS_GENITIVE[dt.month], str(dt.year), dt.strftime("%d.%m.%Y")
+        except ValueError:
+            continue
+    return "", "", text, text
 
 
 def to_decimal(value: Any) -> Decimal:
@@ -118,12 +226,15 @@ def normalize_item(raw: dict[str, Any]) -> dict[str, Any]:
     )
     quantity = to_decimal(raw.get("quantity") or raw.get("qty") or 1)
     unit_price = to_decimal(raw.get("unit_price") or raw.get("price") or raw.get("amount") or 0)
+    unit = raw.get("unit") or raw.get("ед") or raw.get("uom") or "шт"
     return {
         **raw,
         "item_name": str(name),
         "quantity": quantity,
+        "unit": str(unit),
         "unit_price": unit_price,
         "line_total": quantity * unit_price,
+        "quantity_display": format_qty(quantity),
     }
 
 
@@ -242,20 +353,39 @@ def finalize_context(record: dict[str, Any]) -> dict[str, Any]:
     tax_rate = to_decimal(context.get("tax_rate") or context.get("vat") or 0)
     tax = (subtotal * tax_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     total = subtotal + tax
+    day, month, year, date_dotted = parse_act_date(context.get("date") or "")
+
+    executor_name = (
+        context.get("executor_name")
+        or context.get("contractor_name")
+        or context.get("seller_name")
+        or "ООО"
+    )
+    executor_title = context.get("executor_title") or "Генеральный директор"
+    basis = context.get("basis") or context.get("основание") or context.get("notes") or ""
 
     context.update(
         {
             "items": items,
+            "items_count": len(items),
             "subtotal": subtotal,
             "tax": tax,
             "tax_rate": tax_rate,
             "total": total,
+            "total_words": amount_in_words(total),
             "currency": context.get("currency") or "RUB",
             "customer_name": context.get("customer_name") or context.get("customer") or "",
             "customer_email": context.get("customer_email") or "",
             "customer_address": context.get("customer_address") or "",
             "date": context.get("date") or "",
+            "date_day": day,
+            "date_month": month,
+            "date_year": year,
+            "date_dotted": date_dotted,
             "notes": context.get("notes") or "",
+            "basis": basis,
+            "executor_name": executor_name,
+            "executor_title": executor_title,
         }
     )
     return context
@@ -321,6 +451,8 @@ def render_pdf(template_path: Path, context: dict[str, Any], output_path: Path) 
         autoescape=select_autoescape(["html", "xml"]),
     )
     env.filters["money"] = money
+    env.filters["qty"] = format_qty
+    env.filters["amount_in_words"] = amount_in_words
     html = env.get_template(template_path.name).render(**context)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     HTML(string=html, base_url=str(TEMPLATES_DIR)).write_pdf(output_path, stylesheets=[font_css()])
